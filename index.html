@@ -337,7 +337,7 @@
         <div id="screen-login" class="hidden flex-1 flex flex-col justify-center p-5 pb-10">
             <div class="game-box p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Alamat Gmail</label>
+                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Gmail</label>
                     <input type="text" id="login-username" class="game-input" placeholder="Masukkan alamat Gmail">
                 </div>
 
@@ -382,13 +382,13 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Alamat Gmail</label>
+                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Gmail</label>
                     <input type="text" id="signup-username" class="game-input" placeholder="contoh@gmail.com">
                 </div>
 
                 <div>
                     <label class="block text-xs font-black text-slate-800 uppercase mb-1">Password</label>
-                    <input type="password" id="signup-password" class="game-input" placeholder="Minimal 8 karakter">
+                    <input type="password" id="signup-password" class="game-input" placeholder="Minimal 6 karakter">
                 </div>
 
                 <div>
@@ -397,7 +397,7 @@
                 </div>
 
                 <div class="pt-2 border-t-2 border-slate-200">
-                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Nomor DANA</label>
+                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Nomor DANA (Validator)</label>
                     <input type="number" id="signup-dana-no" class="game-input" placeholder="08XXXXXXXXXX">
                 </div>
 
@@ -547,6 +547,13 @@
                     <div class="text-center mb-2">
                         <h2 class="text-2xl font-black text-white drop-shadow-[0_2px_0_#0F172A]">FORM STORAN GMAIL</h2>
                         <p class="text-sky-200 text-xs font-bold uppercase">Pastikan Alamat Gmail Valid & Aktif</p>
+                    </div>
+
+                    <div id="market-closed-notice" class="hidden rounded-2xl border-2 border-red-300 bg-red-950/90 p-4 text-center text-white shadow-lg" role="status" aria-live="polite">
+                        <div class="text-2xl mb-1">🔒</div>
+                        <h3 class="font-black text-red-300 tracking-wide">MARKET SEDANG TUTUP</h3>
+                        <p class="mt-2 text-xs leading-relaxed">Market hanya buka Senin–Jumat pukul 06:00–17:00 WIB. Sabtu–Minggu tutup sepanjang hari.</p>
+                        <p id="market-closed-status" class="mt-2 text-xs font-bold text-amber-200">Market dibuka kembali Senin pukul 06:00 WIB.</p>
                     </div>
 
                     <div class="game-box p-5 space-y-4">
@@ -838,6 +845,46 @@
 
         const APP_PIN_VALID = "sgsg1122";
 
+        // JADWAL MARKET: Senin-Jumat 06:00-17:00 WIB; Sabtu-Minggu tutup.
+        function isMarketOpenNow() {
+            const parts = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Asia/Jakarta', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(new Date());
+            const part = (type) => parts.find(item => item.type === type)?.value;
+            const weekday = part('weekday');
+            const minuteOfDay = Number(part('hour')) * 60 + Number(part('minute'));
+            return ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].includes(weekday) && minuteOfDay >= 360 && minuteOfDay < 1020;
+        }
+
+        function updateMarketSchedule() {
+            const notice = document.getElementById('market-closed-notice');
+            const submitButton = document.getElementById('btn-submit-storan');
+            if (!notice || !submitButton) return;
+
+            const parts = new Intl.DateTimeFormat('en-GB', {
+                timeZone: 'Asia/Jakarta', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+            }).formatToParts(new Date());
+            const part = (type) => parts.find(item => item.type === type)?.value;
+            const weekday = part('weekday');
+            const minuteOfDay = Number(part('hour')) * 60 + Number(part('minute'));
+            const isOpen = isMarketOpenNow();
+
+            notice.classList.toggle('hidden', isOpen);
+            submitButton.disabled = !isOpen;
+            submitButton.style.opacity = isOpen ? '' : '0.45';
+            submitButton.style.cursor = isOpen ? '' : 'not-allowed';
+            const status = document.getElementById('market-closed-status');
+            if (status && !isOpen) {
+                status.textContent = weekday === 'Sat' || weekday === 'Sun'
+                    ? 'Market dibuka kembali Senin pukul 06:00 WIB.'
+                    : (minuteOfDay < 360
+                        ? 'Market dibuka hari ini pukul 06:00 WIB.'
+                        : 'Market dibuka kembali pada hari kerja berikutnya pukul 06:00 WIB.');
+            }
+        }
+        updateMarketSchedule();
+        window.setInterval(updateMarketSchedule, 15000);
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) updateMarketSchedule(); });
 
         // KONFIGURASI: isi menggunakan kredensial project Supabase Anda.
         const SUPABASE_URL = 'https://xynxezltwufdgwwurnej.supabase.co';
@@ -1422,7 +1469,7 @@
             if (!/^[^\s@]+@gmail\.com$/i.test(email)) return showGameModal('GMAIL TIDAK VALID', 'Masukkan alamat Gmail yang benar.', 'error');
 
             const button = document.querySelector('#screen-login button[onclick="handleLogin()"]');
-            if (button) { button.disabled = true; button.textContent = 'MEMUAT...'; }
+            if (button) { button.disabled = true; button.textContent = 'MEMUAT DATA...'; }
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
@@ -1547,6 +1594,11 @@
         }
 
         async function handleSubmitStoran() {
+            if (!isMarketOpenNow()) {
+                updateMarketSchedule();
+                showGameModal('MARKET SEDANG TUTUP', 'Storan hanya dapat dikirim Senin–Jumat pukul 06:00–17:00 WIB.', 'error');
+                return;
+            }
             const countVal = document.getElementById('storan-count').value;
             const count = parseInt(countVal);
             const rawGmailText = document.getElementById('storan-list').value.trim();
