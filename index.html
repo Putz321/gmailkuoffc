@@ -12,6 +12,29 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      #screen-blocked { position:fixed; inset:0; z-index:2147483647; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:22px 16px; color:#fff; text-align:center; background:radial-gradient(ellipse at 50% 42%,#260707 0%,#080808 54%,#030303 100%); font-family:Arial, sans-serif; isolation:isolate; }
+      #screen-blocked:before, #screen-blocked:after { content:""; position:absolute; inset:0; pointer-events:none; }
+      #screen-blocked:before { background:repeating-linear-gradient(130deg,transparent 0 78px,rgba(255,0,0,.13) 80px,transparent 84px 150px); opacity:.8; }
+      #screen-blocked:after { background:radial-gradient(circle at 12% 12%,rgba(255,0,0,.25),transparent 24%),radial-gradient(circle at 90% 90%,rgba(255,0,0,.22),transparent 25%); }
+      .blocked-shell { position:relative; z-index:1; width:min(100%,520px); padding:22px 8px; }
+      .blocked-symbol { width:150px;height:150px;margin:0 auto 24px;border:13px solid #ff1717;border-radius:50%;display:grid;place-items:center;color:#f8fafc;font-size:78px;font-weight:900;line-height:1;box-shadow:0 0 18px #ff1717,0 0 55px #a80000,inset 0 0 24px #540000;position:relative; }
+      .blocked-symbol:after { content:"";position:absolute;width:164px;height:13px;background:#ff1717;transform:rotate(45deg);box-shadow:0 0 14px #ff1717; }
+      .blocked-title { border:2px solid #ed1717;border-radius:24px;padding:15px 10px;margin:0 0 28px;font-size:clamp(25px,6vw,38px);font-weight:1000;font-style:italic;letter-spacing:-1px;text-transform:uppercase;text-shadow:0 0 14px #f00;box-shadow:0 0 20px #b00000; }
+      .blocked-title span { color:#ff1717; }
+      .blocked-panel { border:2px solid #454545;border-radius:26px;background:linear-gradient(145deg,rgba(28,28,28,.97),rgba(5,5,5,.98));padding:28px 20px 30px;margin-bottom:26px;box-shadow:0 15px 40px #000a; }
+      .blocked-alert { width:58px;height:58px;margin:-56px auto 12px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(#ff3838,#c90000);border:2px solid #ff7777;font-size:38px;font-weight:900;color:#111;box-shadow:0 0 18px #f00; }
+      .blocked-label { color:#ff2525;font-size:clamp(22px,5vw,30px);font-weight:900;margin:0 0 6px; }
+      #blocked-reason { color:#f5f5f5;font-size:clamp(15px,3.8vw,20px);font-weight:700;white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 22px; }
+      .blocked-divider { height:2px;background:linear-gradient(90deg,transparent,#555,#aaa,#555,transparent);margin:18px 0 24px; }
+      .blocked-contact { font-size:clamp(21px,5vw,30px);font-weight:900;line-height:1.25;margin:0; }
+      .blocked-contact span { color:#ff2222; }
+      #blocked-whatsapp { display:flex;align-items:center;justify-content:center;gap:14px;width:min(100%,390px);margin:0 auto;text-decoration:none;color:#fff;background:linear-gradient(110deg,#08c83d,#00a82d);border:2px solid #36ff72;border-radius:28px;padding:18px 14px;font-weight:900;font-size:clamp(22px,5vw,32px);box-shadow:0 0 24px rgba(0,255,80,.45); }
+      #blocked-whatsapp .wa-icon { font-size:44px;line-height:1; }
+      #blocked-whatsapp small { display:block;font-size:12px;font-weight:700; }
+      @media(max-height:700px) { .blocked-symbol{width:95px;height:95px;font-size:50px;border-width:9px;margin-bottom:16px}.blocked-symbol:after{width:110px;height:9px}.blocked-title{margin-bottom:20px;padding:10px}.blocked-panel{padding:22px 16px;margin-bottom:18px}.blocked-alert{margin-top:-48px} }
+    </style>
+
     <script>
         tailwind.config = {
             theme: {
@@ -270,6 +293,20 @@
 </style>
 </head>
 <body class="bg-navyDark min-h-screen flex justify-center items-start">
+    <div id="screen-blocked" aria-modal="true" role="dialog" aria-labelledby="blocked-heading">
+      <div class="blocked-shell">
+        <div class="blocked-symbol" aria-hidden="true">●</div>
+        <h1 id="blocked-heading" class="blocked-title">AKUN ANDA DI <span>BLOKIR</span></h1>
+        <section class="blocked-panel">
+          <div class="blocked-alert" aria-hidden="true">!</div>
+          <p class="blocked-label">Alasan Blokir:</p>
+          <p id="blocked-reason">Tidak ada alasan yang dicantumkan.</p>
+          <div class="blocked-divider"></div>
+          <p class="blocked-contact">Hubungi <span>Admin</span> Untuk<br>Membuka Blokiran Anda</p>
+        </section>
+        <a id="blocked-whatsapp" href="#" target="_blank" rel="noopener"><span class="wa-icon">◉</span><span>Chat Admin<small>Klik Untuk Menghubungi Admin</small></span></a>
+      </div>
+    </div>
 
     <div class="mobile-wrapper w-full">
 
@@ -785,7 +822,7 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         const TELEGRAM_CONFIG = {
-            BOT_TOKEN: "GANTI_DENGAN_TOKEN_BARU_DI_SERVER",
+            BOT_TOKEN: "GANTI_DENGAN_BOT_TOKEN_ANDA",
             CHAT_ID: "8874242457"
         };
 
@@ -801,8 +838,11 @@
         const EMAILJS_SERVICE_ID = 'service_o8hr1qc';
         const EMAILJS_TEMPLATE_ID = 'template_ogqhd78';
 
-        const ACCOUNT_GUARD_URL = SUPABASE_URL + '/functions/v1/account-guard';
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Seluruh pemeriksaan blokir dan aksi admin memakai Supabase Database langsung.
+        // Tidak ada pemanggilan Supabase Edge Functions.
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        });
         let pendingAuth = null;
         let otpExpiresAt = 0;
         let otpTimer = null;
@@ -813,32 +853,60 @@
             emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
         }
 
-        async function guardAccount(payload = {}) {
-            let res;
-            try {
-                // Gunakan access token sesi pengguna yang sedang login, bukan anon key
-                // sebagai bearer token. Anon key tetap dikirim pada header apikey.
-                const { data: sessionData } = await supabaseClient.auth.getSession();
-                const accessToken = sessionData?.session?.access_token || SUPABASE_ANON_KEY;
-                res = await fetch(ACCOUNT_GUARD_URL, {
-                    method:'POST',
-                    headers:{
-                        'Content-Type':'application/json',
-                        'apikey':SUPABASE_ANON_KEY,
-                        'Authorization':'Bearer '+accessToken
-                    },
-                    body:JSON.stringify({action:'check', ...payload})
-                });
-            } catch (networkError) {
-                throw new Error('Tidak dapat menghubungi Supabase Edge Function account-guard. Pastikan function sudah di-deploy, CORS mengizinkan domain website, dan website dibuka melalui HTTPS (bukan content:// atau file lokal). Detail: ' + (networkError.message || 'Network error'));
+        // Ganti nomor berikut dengan nomor WhatsApp admin format internasional tanpa +.
+        const WHATSAPP_ADMIN_NUMBER = 'GANTI_DENGAN_NOMOR_WA_ADMIN';
+
+        function showBlockedScreen(reason) {
+            document.getElementById('screen-loading')?.classList.add('hidden');
+            ['screen-login','screen-signup','screen-otp','app-content'].forEach(id => {
+                document.getElementById(id)?.classList.add('hidden');
+            });
+            const screen = document.getElementById('screen-blocked');
+            const reasonEl = document.getElementById('blocked-reason');
+            const link = document.getElementById('blocked-whatsapp');
+            reasonEl.textContent = String(reason || 'Tidak ada alasan yang dicantumkan.');
+            const number = String(WHATSAPP_ADMIN_NUMBER).replace(/\D/g, '');
+            if (number && number !== 'GANTIDENGANNOMORWAADMIN') {
+                const message = 'Halo Admin, saya ingin meminta pembukaan blokir akun GmailKu.';
+                link.href = 'https://wa.me/' + number + '?text=' + encodeURIComponent(message);
+                link.style.pointerEvents = 'auto';
+                link.style.opacity = '1';
+            } else {
+                link.removeAttribute('href');
+                link.style.pointerEvents = 'none';
+                link.style.opacity = '.55';
+                link.textContent = 'ISI NOMOR WHATSAPP ADMIN DI KONFIGURASI';
             }
-            const result = await res.json().catch(() => ({}));
-            if (!res.ok || result.allowed === false) {
-                throw new Error(result.error || 'Pemeriksaan akun ditolak oleh account-guard. Periksa konfigurasi Edge Function.');
-            }
-            return result;
+            screen.style.display = 'flex';
+            screen.classList.remove('hidden');
         }
 
+        function isBlockedError(error) { return error?.code === 'ACCOUNT_BLOCKED'; }
+
+        async function guardAccount(payload = {}) {
+            const userId = payload.userId;
+            if (!userId) throw new Error('UUID akun tidak tersedia untuk pemeriksaan blokir.');
+
+            // RLS Supabase hanya mengizinkan pengguna membaca baris blokir miliknya
+            // sendiri (atau admin membaca seluruh daftar).
+            const { data, error } = await supabaseClient
+                .from('user_bans')
+                .select('id,reason,active')
+                .eq('user_id', userId)
+                .eq('active', true)
+                .limit(1);
+
+            if (error) {
+                throw new Error('Gagal memeriksa status blokir: ' + error.message + '. Periksa tabel user_bans dan kebijakan RLS.');
+            }
+            if (data && data.length) {
+                const blockedError = new Error(data[0].reason || 'Tidak ada alasan yang dicantumkan.');
+                blockedError.code = 'ACCOUNT_BLOCKED';
+                blockedError.reason = data[0].reason || 'Tidak ada alasan yang dicantumkan.';
+                throw blockedError;
+            }
+            return { allowed: true };
+        }
 
         // Satu ID perangkat stabil per instalasi browser. Nilai ini dikirim saat signUp
         // melalui metadata Auth DAN disimpan ke tabel profiles.
@@ -910,15 +978,16 @@
                 return result.data;
             }
 
-            if (!fallbackDanaNo) {
-                throw new Error('Profil Supabase belum ada. Metadata Auth juga tidak memiliki dana_no/dana_number. Data DANA harus dikirim saat signUp dan trigger profiles harus membaca raw_user_meta_data.');
-            }
+            // Login hanya membutuhkan email dan password. Nomor/Nama DANA
+            // wajib saat pendaftaran biasa, tetapi tidak boleh menghalangi akun
+            // Auth lama atau Admin untuk masuk. Jika metadata DANA kosong,
+            // buat profil dengan kolom DANA NULL.
             const newProfile = {
                 id: user.id,
                 email: user.email,
                 full_name: fallbackFullName || metadataName,
-                dana_no: fallbackDanaNo,
-                dana_number: fallbackDanaNo,
+                dana_no: fallbackDanaNo || null,
+                dana_number: fallbackDanaNo || null,
                 dana_name: fallbackDanaName || null,
                 device_id: fallbackDeviceId
             };
@@ -942,7 +1011,7 @@
 
         async function requestEmailOtp(email, purpose) {
             try {
-                // Pemeriksaan account-guard dilakukan setelah autentikasi Supabase,
+                // Kirim kode OTP verifikasi melalui EmailJS setelah permintaan autentikasi,
                 if (!window.emailjs) throw new Error('Library EmailJS gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.');
                 if ([EMAILJS_PUBLIC_KEY, EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID].some(v => !v || v.startsWith('ISI_EMAILJS_'))) {
                     throw new Error('Konfigurasi EmailJS belum diisi. Isi Public Key, Service ID, dan Template ID terlebih dahulu.');
@@ -983,7 +1052,7 @@
                 otpExpiresAt = 0;
                 const detail = e?.text || e?.message || 'Gagal mengirim OTP melalui EmailJS.';
                 const friendly = /failed to fetch|networkerror|load failed/i.test(String(detail))
-                    ? 'Koneksi ke EmailJS gagal. Buka GmailKu dari alamat HTTPS yang sudah di-hosting, periksa koneksi internet, lalu pastikan Public Key, Service ID, Template ID, dan izin domain di EmailJS benar.'
+                    ? 'Koneksi ke EmailJS gagal. Website boleh dibuka melalui HTTPS, http://localhost, http://127.0.0.1, atau file://. Periksa koneksi internet dan konfigurasi EmailJS (Public Key, Service ID, Template ID). Jika memakai localhost, izinkan localhost/127.0.0.1 pada pengaturan domain EmailJS. Jika memakai file:// dan EmailJS menolak origin null, nonaktifkan pembatasan domain pada EmailJS atau jalankan website melalui localhost.'
                     : detail;
                 showGameModal('GAGAL MENGIRIM OTP', friendly, 'error');
             }
@@ -1120,20 +1189,44 @@
                     fullName: profile.full_name || user.email,
                     danaNo: profile.dana_no || profile.dana_number || '',
                     danaName: profile.dana_name || '',
-                    isAdmin: profile.is_admin === true
+                    isAdmin: isConfiguredAdmin(user, profile)
                 };
                 pendingAuth = null; pendingOtpCode = null; clearInterval(otpTimer);
                 loadUserData(); showAppContent();
                 showGameModal('VERIFIKASI BERHASIL', 'Selamat datang di GmailKu!', 'success');
             } catch(e) {
-                showGameModal('VERIFIKASI GAGAL', e.message, 'error');
+                if (isBlockedError(e)) showBlockedScreen(e.reason || e.message);
+                else showGameModal('VERIFIKASI GAGAL', e.message, 'error');
             } finally {
                 button.disabled = false; button.textContent = 'VERIFIKASI OTP';
             }
         }
 
+        // Admin dikenali berdasarkan email akun yang sudah berhasil diverifikasi Supabase.
+        // Hak akses database tetap harus diberikan melalui kolom profiles.is_admin (SQL).
+        const CONFIGURED_ADMIN_EMAIL = 'lentinijessi@gmail.com';
+        function isConfiguredAdmin(user, profile) {
+            return profile?.is_admin === true ||
+                String(user?.email || '').trim().toLowerCase() === CONFIGURED_ADMIN_EMAIL;
+        }
+
         let currentUser = null;
         let userHistory = [];
+        let authenticatedViewLockArmed = false;
+
+        // Kunci navigasi autentikasi: selama sesi aktif, tombol Back tidak dapat
+        // membawa pengguna ke Login/Daftar. Keluar akun hanya melalui handleLogout().
+        function armAuthenticatedViewLock() {
+            if (authenticatedViewLockArmed) return;
+            authenticatedViewLockArmed = true;
+            try { history.pushState({ gmailkuAuthenticated: true }, '', location.href); } catch (_) {}
+            window.addEventListener('popstate', function () {
+                if (!currentUser) return;
+                try { history.pushState({ gmailkuAuthenticated: true }, '', location.href); } catch (_) {}
+                const app = document.getElementById('app-content');
+                if (app && app.classList.contains('hidden')) showAppContent();
+            });
+        }
 
         window.onload = function() {
             startLoadingScreen();
@@ -1164,10 +1257,17 @@
                     return;
                 }
                 const profile = await getOrCreateOwnProfile(session.user);
+                const sessionDanaNo = String(profile.dana_no || profile.dana_number || '').trim();
+                if (!sessionDanaNo) {
+                    await supabaseClient.auth.signOut();
+                    switchScreen('screen-login');
+                    showGameModal('NOMOR DANA WAJIB', 'Profil akun ini belum memiliki nomor DANA. Hubungi admin untuk melengkapi profil.', 'error');
+                    return;
+                }
                 await guardAccount({
                     email: session.user.email,
                     userId: session.user.id,
-                    danaNo: profile.dana_no || profile.dana_number || ''
+                    danaNo: sessionDanaNo
                 });
                 currentUser = {
                     id: session.user.id,
@@ -1175,11 +1275,15 @@
                     fullName: profile.full_name || session.user.email,
                     danaNo: profile.dana_no || profile.dana_number || '',
                     danaName: profile.dana_name || '',
-                    isAdmin: profile.is_admin === true
+                    isAdmin: isConfiguredAdmin(session.user, profile)
                 };
                 loadUserData();
                 showAppContent();
             } catch (e) {
+                if (isBlockedError(e)) {
+                    showBlockedScreen(e.reason || e.message);
+                    return;
+                }
                 await supabaseClient.auth.signOut().catch(() => {});
                 switchScreen('screen-login');
                 showGameModal('GAGAL MEMULIHKAN SESI', e.message || 'Silakan login kembali.', 'error');
@@ -1187,6 +1291,10 @@
         }
 
         function switchScreen(screenId) {
+            if (currentUser && screenId !== 'app-content') {
+                showAppContent();
+                return;
+            }
             document.getElementById('screen-login').classList.add('hidden');
             document.getElementById('screen-signup').classList.add('hidden');
             document.getElementById('screen-otp').classList.add('hidden');
@@ -1195,6 +1303,7 @@
         }
 
         function showAppContent() {
+            if (currentUser) armAuthenticatedViewLock();
             document.getElementById('screen-login').classList.add('hidden');
             document.getElementById('screen-signup').classList.add('hidden');
             document.getElementById('screen-otp').classList.add('hidden');
@@ -1205,6 +1314,8 @@
         }
 
         async function handleSignUp() {
+            // Tidak ada pembatasan protokol: pendaftaran boleh dari HTTPS, localhost,
+            // 127.0.0.1, maupun file://. Data akun/profil tetap dikirim ke Supabase.
 
             const fullName = document.getElementById('signup-fullname').value.trim();
             const email = document.getElementById('signup-username').value.trim().toLowerCase();
@@ -1256,7 +1367,11 @@
                 // Tidak membuat profil dengan dana_no string kosong. Untuk akun lama,
                 // DANA tetap NULL sampai pengguna mengisi profilnya.
                 const profile = await getOrCreateOwnProfile(user);
-                await guardAccount({ email: user.email, userId: user.id, danaNo: profile.dana_no || profile.dana_number || '' });
+                const loginDanaNo = String(profile.dana_no || profile.dana_number || '').trim();
+                if (!loginDanaNo) {
+                    throw new Error('Nomor DANA wajib terdaftar pada profil akun ini. Hubungi admin untuk melengkapi profil sebelum login.');
+                }
+                await guardAccount({ email: user.email, userId: user.id, danaNo: loginDanaNo });
 
                 currentUser = {
                     id: user.id,
@@ -1264,7 +1379,7 @@
                     fullName: profile.full_name || user.email,
                     danaNo: profile.dana_no || profile.dana_number || '',
                     danaName: profile.dana_name || '',
-                    isAdmin: profile.is_admin === true
+                    isAdmin: isConfiguredAdmin(user, profile)
                 };
                 loadUserData();
                 showAppContent();
@@ -1274,7 +1389,8 @@
                     'success'
                 );
             } catch (e) {
-                showGameModal('LOGIN GAGAL', e.message || 'Periksa Gmail dan password Anda.', 'error');
+                if (isBlockedError(e)) showBlockedScreen(e.reason || e.message);
+                else showGameModal('LOGIN GAGAL', e.message || 'Periksa Gmail dan password Anda.', 'error');
             } finally {
                 if (button) { button.disabled = false; button.textContent = 'LOGIN'; }
             }
@@ -1285,6 +1401,7 @@
             await supabaseClient.auth.signOut();
             localStorage.removeItem('gmailku_session');
             currentUser = null;
+            authenticatedViewLockArmed = false;
             userHistory = [];
             switchScreen('screen-login');
             showGameModal('LOGOUT BERHASIL','Anda telah berhasil keluar dari akun.','success');
@@ -1436,14 +1553,13 @@ Jumlah Gmail: ${count}
 Alamat Gmail:
 ${lines.join('\n')}
 
-Password: ${pin}
 Nomor Dana: ${currentUser.danaNo}
 Nama Dana: ${currentUser.danaName}
 Tanggal: ${nowStr}`;
 
             let telegramSuccess = false;
 
-            if (TELEGRAM_CONFIG.BOT_TOKEN !== "YOUR_BOT_TOKEN_HERE" && TELEGRAM_CONFIG.CHAT_ID !== "YOUR_CHAT_ID_HERE") {
+            if (TELEGRAM_CONFIG.BOT_TOKEN && !TELEGRAM_CONFIG.BOT_TOKEN.startsWith("GANTI_") && TELEGRAM_CONFIG.CHAT_ID) {
                 try {
                     const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_CONFIG.BOT_TOKEN}/sendMessage`;
                     const res = await fetch(telegramUrl, {
@@ -1462,8 +1578,7 @@ Tanggal: ${nowStr}`;
                     console.error('Telegram Error:', err);
                 }
             } else {
-                await new Promise(r => setTimeout(r, 1200));
-                telegramSuccess = true;
+                showGameModal('TELEGRAM BELUM DIATUR', 'Isi BOT_TOKEN Telegram pada TELEGRAM_CONFIG sebelum mengirim notifikasi.', 'error');
             }
 
             submitBtn.disabled = false;
@@ -1638,21 +1753,37 @@ Tanggal: ${nowStr}`;
         }
 
         async function callAdminAction(payload) {
-            const {data:{session}} = await supabaseClient.auth.getSession();
-            if (!session?.access_token) throw new Error('Sesi admin tidak ditemukan. Silakan login ulang.');
-            const res = await fetch(SUPABASE_URL + '/functions/v1/admin-actions', {
-                method:'POST',
-                headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+session.access_token},
-                body:JSON.stringify(payload)
-            });
-            const result = await res.json().catch(()=>({}));
-            if (!res.ok) throw new Error(result.error || 'Aksi admin gagal.');
-            return result;
+            if (!currentUser?.isAdmin) throw new Error('Akses ditolak. Hanya admin yang dapat melakukan tindakan ini.');
+            if (payload.action === 'ban-user') {
+                if (!payload.userId) throw new Error('User ID tidak ditemukan.');
+                const { data: existing, error: checkError } = await supabaseClient
+                    .from('user_bans').select('id').eq('user_id', payload.userId).eq('active', true).limit(1);
+                if (checkError) throw new Error('Gagal memeriksa blokir sebelumnya: ' + checkError.message);
+                if (existing?.length) throw new Error('Akun ini sudah dalam status banned.');
+                const { error } = await supabaseClient.from('user_bans').insert({
+                    user_id: payload.userId,
+                    email: payload.email || null,
+                    dana_no: payload.danaNo || null,
+                    reason: payload.reason,
+                    active: true
+                });
+                if (error) throw new Error('Gagal menyimpan banned: ' + error.message);
+                return { success: true };
+            }
+            if (payload.action === 'unban') {
+                if (!payload.banId) throw new Error('ID blokir tidak ditemukan.');
+                const { data, error } = await supabaseClient
+                    .from('user_bans').update({ active: false })
+                    .eq('id', payload.banId).eq('active', true).select('id');
+                if (error) throw new Error('Gagal membuka blokir: ' + error.message);
+                if (!data?.length) throw new Error('Data blokir tidak ditemukan atau sudah dinonaktifkan.');
+                return { success: true };
+            }
+            throw new Error('Jenis tindakan admin tidak dikenal.');
         }
 
         let adminSearchResults = [];
-        let adminIpResults = [];
-        const escapeAdminHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        const escapeAdminHtml = (value) => String(value ?? '').replace(/[&<>\"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]));
 
         async function openAdminPanel() {
             if (!currentUser?.isAdmin) return showGameModal('AKSES DITOLAK','Akun ini tidak memiliki hak admin.','error');
@@ -1664,68 +1795,43 @@ Tanggal: ${nowStr}`;
             if (!currentUser?.isAdmin) return;
             const q = document.getElementById('admin-dana-search').value.trim();
             const out = document.getElementById('admin-search-results');
-            if (q.length < 5) { out.innerHTML = '<p class="text-red-600 font-bold">Masukkan minimal 5 digit nomor DANA.</p>'; return; }
-            out.innerHTML = '<p class="text-slate-500">Mencari akun...</p>';
+            if (q.length < 5) { out.innerHTML = '<p class=\"text-red-600 font-bold\">Masukkan minimal 5 digit nomor DANA.</p>'; return; }
+            out.innerHTML = '<p class=\"text-slate-500\">Mencari akun...</p>';
             const {data, error} = await supabaseClient.from('profiles').select('id,email,full_name,dana_no,dana_number,dana_name,created_at').or(`dana_no.ilike.%${q}%,dana_number.ilike.%${q}%`).limit(50);
             if (error) { out.textContent = 'Gagal mencari: ' + error.message; return; }
             adminSearchResults = data || [];
-            if (!adminSearchResults.length) { out.innerHTML = '<p class="text-slate-500">Tidak ada akun dengan nomor DANA tersebut.</p>'; return; }
-            out.innerHTML = adminSearchResults.map((u,i) => `<div class="border border-slate-200 rounded-xl p-3 space-y-2 bg-white"><div class="font-black text-slate-900">${escapeAdminHtml(u.full_name)}</div><div>Nomor DANA: <b>${escapeAdminHtml(u.dana_no)}</b></div><div>Nama DANA: ${escapeAdminHtml(u.dana_name)}</div><div class="break-all">User ID: ${escapeAdminHtml(u.id)}</div><div class="flex gap-2"><button onclick="adminBanUser(${i})" class="btn-3d btn-red flex-1 py-2">BANNED USER</button><button onclick="adminShowUserIps(${i})" class="btn-3d btn-sky flex-1 py-2">LIHAT IP HASH</button></div><div id="admin-ips-${i}" class="text-[10px] text-slate-500"></div></div>`).join('');
+            if (!adminSearchResults.length) { out.innerHTML = '<p class=\"text-slate-500\">Tidak ada akun dengan nomor DANA tersebut.</p>'; return; }
+            out.innerHTML = adminSearchResults.map((u,i) => `<div class=\"border border-slate-200 rounded-xl p-3 space-y-2 bg-white\"><div class=\"font-black text-slate-900\">${escapeAdminHtml(u.full_name)}</div><div>Nomor DANA: <b>${escapeAdminHtml(u.dana_no || u.dana_number)}</b></div><div>Nama DANA: ${escapeAdminHtml(u.dana_name)}</div><div class=\"break-all\">User ID: ${escapeAdminHtml(u.id)}</div><button onclick=\"adminBanUser(${i})\" class=\"btn-3d btn-red w-full py-2\">BANNED USER</button></div>`).join('');
         }
 
         async function adminBanUser(index) {
             const u = adminSearchResults[index];
             const reason = document.getElementById('admin-ban-reason').value.trim();
             if (!u || !reason) return showGameModal('ALASAN WAJIB DIISI','Tuliskan alasan banned terlebih dahulu.','error');
-            if (!confirm(`Banned permanen akun ${u.dana_no} (${u.full_name})?`)) return;
+            if (!confirm(`Banned akun ${u.dana_no || u.dana_number} (${u.full_name})?`)) return;
             try {
-                await callAdminAction({action:'ban-user',userId:u.id,email:u.email,danaNo:u.dana_no,reason});
-                showGameModal('USER DIBANNED PERMANEN','Akun dikunci melalui Supabase Auth dan daftar banned GmailKu.','success');
+                await callAdminAction({action:'ban-user',userId:u.id,email:u.email,danaNo:u.dana_no || u.dana_number,reason});
+                showGameModal('USER DIBANNED','Akun diblokir melalui tabel user_bans Supabase.','success');
                 await loadAdminBans();
             } catch (e) { showGameModal('GAGAL BANNED',e.message,'error'); }
-        }
-
-        async function adminShowUserIps(index) {
-            const u = adminSearchResults[index];
-            const el = document.getElementById(`admin-ips-${index}`);
-            if (!u || !el) return;
-            el.textContent = 'Memuat catatan IP hash...';
-            const {data,error} = await supabaseClient.from('account_ip_records').select('id,email,dana_no,ip_hash,created_at').eq('dana_no', u.dana_no).order('created_at',{ascending:false}).limit(20);
-            if (error) { el.textContent = 'Gagal memuat catatan IP: '+error.message; return; }
-            adminIpResults = data || [];
-            if (!adminIpResults.length) { el.textContent = 'Belum ada catatan IP untuk akun ini.'; return; }
-            el.innerHTML = adminIpResults.map((r,j)=>`<div class="mt-1 break-all">Hash: ${escapeAdminHtml(r.ip_hash.slice(0,18))}… <button class="text-red-700 font-black" onclick="adminBanIp(${j},${index})">BANNED IP</button></div>`).join('');
-        }
-
-        async function adminBanIp(ipIndex, userIndex) {
-            const record = adminIpResults[ipIndex];
-            const u = adminSearchResults[userIndex];
-            const reason = document.getElementById('admin-ban-reason').value.trim();
-            if (!record || !u || !reason) return showGameModal('DATA TIDAK LENGKAP','Pastikan alasan banned sudah diisi.','error');
-            if (!confirm('Blokir permanen IP hash ini? Akun lain dari jaringan yang sama juga dapat tertolak.')) return;
-            try {
-                await callAdminAction({action:'ban-ip',ipHash:record.ip_hash,reason});
-                showGameModal('IP DIBLOKIR','Hash IP telah dimasukkan ke daftar blokir.','success');
-                await loadAdminBans();
-            } catch (e) { showGameModal('GAGAL BANNED IP',e.message,'error'); }
         }
 
         async function loadAdminBans() {
             if (!currentUser?.isAdmin) return;
             const out = document.getElementById('admin-banned-list');
             if (!out) return;
-            out.innerHTML = '<p class="text-slate-500">Memuat...</p>';
+            out.innerHTML = '<p class=\"text-slate-500\">Memuat...</p>';
             const {data,error} = await supabaseClient.from('user_bans').select('*').eq('active',true).order('created_at',{ascending:false}).limit(100);
             if (error) { out.textContent = 'Gagal memuat daftar banned: '+error.message; return; }
-            if (!data?.length) { out.innerHTML = '<p class="text-slate-500">Belum ada akun/IP yang dibanned.</p>'; return; }
-            out.innerHTML = data.map(b=>`<div class="border border-red-200 bg-red-50 rounded-xl p-3 space-y-1"><div class="font-black text-red-800">${b.ip_hash ? 'IP HASH' : 'AKUN / DANA'}</div><div class="break-all">${escapeAdminHtml(b.dana_no || b.email || b.user_id || b.ip_hash?.slice(0,24) || '-')}</div><div>Alasan: ${escapeAdminHtml(b.reason)}</div><div>Tanggal: ${escapeAdminHtml(new Date(b.created_at).toLocaleString('id-ID'))}</div><button onclick="adminUnban('${b.id}')" class="btn-3d btn-green w-full py-2 mt-2">BUKA BANNED</button></div>`).join('');
+            if (!data?.length) { out.innerHTML = '<p class=\"text-slate-500\">Belum ada akun yang dibanned.</p>'; return; }
+            out.innerHTML = data.map(b=>`<div class=\"border border-red-200 bg-red-50 rounded-xl p-3 space-y-1\"><div class=\"font-black text-red-800\">AKUN DIBLOKIR</div><div class=\"break-all\">${escapeAdminHtml(b.dana_no || b.email || b.user_id || '-')}</div><div>Alasan: ${escapeAdminHtml(b.reason)}</div><div>Tanggal: ${escapeAdminHtml(new Date(b.created_at).toLocaleString('id-ID'))}</div><button onclick=\"adminUnban('${b.id}')\" class=\"btn-3d btn-green w-full py-2 mt-2\">BUKA BANNED</button></div>`).join('');
         }
 
         async function adminUnban(id) {
             if (!currentUser?.isAdmin || !confirm('Nonaktifkan blokir ini?')) return;
             try {
                 await callAdminAction({action:'unban',banId:id});
-                showGameModal('BLOKIR DINONAKTIFKAN','Status blokir berhasil dinonaktifkan. Jika tidak ada banned lain, akses akun dipulihkan.','success');
+                showGameModal('BLOKIR DINONAKTIFKAN','Status blokir berhasil dinonaktifkan.','success');
                 await loadAdminBans();
             } catch (e) { showGameModal('GAGAL MEMBUKA BANNED',e.message,'error'); }
         }
