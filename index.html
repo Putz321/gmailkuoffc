@@ -337,7 +337,7 @@
         <div id="screen-login" class="hidden flex-1 flex flex-col justify-center p-5 pb-10">
             <div class="game-box p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Gmail</label>
+                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Alamat Gmail</label>
                     <input type="text" id="login-username" class="game-input" placeholder="Masukkan alamat Gmail">
                 </div>
 
@@ -382,13 +382,13 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Gmail</label>
+                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Alamat Gmail</label>
                     <input type="text" id="signup-username" class="game-input" placeholder="contoh@gmail.com">
                 </div>
 
                 <div>
                     <label class="block text-xs font-black text-slate-800 uppercase mb-1">Password</label>
-                    <input type="password" id="signup-password" class="game-input" placeholder="Minimal 6 karakter">
+                    <input type="password" id="signup-password" class="game-input" placeholder="Minimal 8 karakter">
                 </div>
 
                 <div>
@@ -397,7 +397,7 @@
                 </div>
 
                 <div class="pt-2 border-t-2 border-slate-200">
-                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Nomor DANA (Validator)</label>
+                    <label class="block text-xs font-black text-slate-800 uppercase mb-1">Nomor DANA</label>
                     <input type="number" id="signup-dana-no" class="game-input" placeholder="08XXXXXXXXXX">
                 </div>
 
@@ -819,10 +819,20 @@
         </div>
     </div>
 
+    <!-- OTP SEND LOADING OVERLAY: mengunci seluruh layar saat kode sedang dikirim -->
+    <div id="otp-send-loading" class="hidden" aria-live="polite" aria-busy="true" style="position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(5,12,28,.48);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);pointer-events:auto;">
+        <div style="width:min(320px,100%);padding:28px 22px;border-radius:22px;background:rgba(15,23,42,.94);border:2px solid rgba(125,211,252,.65);box-shadow:0 18px 55px rgba(0,0,0,.45);text-align:center;color:white;">
+            <div style="width:48px;height:48px;margin:0 auto 16px;border:4px solid rgba(255,255,255,.22);border-top-color:#38bdf8;border-radius:50%;animation:otpSendSpin .8s linear infinite;"></div>
+            <div style="font-size:18px;font-weight:900;letter-spacing:.04em;">MENGIRIM KODE OTP</div>
+            <div style="margin-top:8px;font-size:12px;font-weight:700;color:#cbd5e1;">Mohon tunggu, jangan tekan tombol atau tutup halaman.</div>
+        </div>
+    </div>
+    <style>@keyframes otpSendSpin{to{transform:rotate(360deg)}} body.otp-send-pending{overflow:hidden!important} body.otp-send-pending>*:not(#otp-send-loading){filter:blur(5px);pointer-events:none!important;user-select:none!important}</style>
+
     <!-- JAVASCRIPT LOGIC -->
     <script>
         const TELEGRAM_CONFIG = {
-            BOT_TOKEN: "GANTI_DENGAN_BOT_TOKEN_ANDA",
+            BOT_TOKEN: "9028131357:AAGW2vKhr0F8-bPo2AW3jEj4fjOwOJiI7BM",
             CHAT_ID: "8874242457"
         };
 
@@ -848,13 +858,22 @@
         let otpTimer = null;
         let pendingOtpCode = null;
         let otpAttempts = 0;
+        let otpSendInProgress = false;
 
-        if (window.emailjs && EMAILJS_PUBLIC_KEY !== 'ISI_EMAILJS_PUBLIC_KEY') {
+        function setOtpSendLoading(active) {
+            const overlay = document.getElementById('otp-send-loading');
+            if (!overlay) return;
+            overlay.style.display = active ? 'flex' : 'none';
+            overlay.classList.toggle('hidden', !active);
+            document.body.classList.toggle('otp-send-pending', active);
+        }
+
+        if (window.emailjs && EMAILJS_PUBLIC_KEY !== 'BLGiPWpSdCxSi9Q2h') {
             emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
         }
 
         // Ganti nomor berikut dengan nomor WhatsApp admin format internasional tanpa +.
-        const WHATSAPP_ADMIN_NUMBER = 'GANTI_DENGAN_NOMOR_WA_ADMIN';
+        const WHATSAPP_ADMIN_NUMBER = '628814035166';
 
         function showBlockedScreen(reason) {
             document.getElementById('screen-loading')?.classList.add('hidden');
@@ -1010,6 +1029,9 @@
         }
 
         async function requestEmailOtp(email, purpose) {
+            if (otpSendInProgress) return;
+            otpSendInProgress = true;
+            setOtpSendLoading(true);
             try {
                 // Kirim kode OTP verifikasi melalui EmailJS setelah permintaan autentikasi,
                 if (!window.emailjs) throw new Error('Library EmailJS gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.');
@@ -1042,12 +1064,16 @@
                     expiry: '5 menit'
                 });
 
+                setOtpSendLoading(false);
+                otpSendInProgress = false;
                 document.getElementById('otp-email-label').textContent = email;
                 document.getElementById('otp-code').value = '';
                 switchScreen('screen-otp');
                 startOtpCountdown();
                 showGameModal('OTP TERKIRIM','Periksa kotak masuk atau folder spam Gmail Anda.','success');
             } catch (e) {
+                setOtpSendLoading(false);
+                otpSendInProgress = false;
                 pendingOtpCode = null;
                 otpExpiresAt = 0;
                 const detail = e?.text || e?.message || 'Gagal mengirim OTP melalui EmailJS.';
@@ -1213,6 +1239,41 @@
         let currentUser = null;
         let userHistory = [];
         let authenticatedViewLockArmed = false;
+        let banRealtimeChannel = null;
+        let banRealtimeUserId = null;
+
+        // Dengarkan perubahan status banned secara realtime untuk akun yang sedang login.
+        // Perubahan akan diterapkan segera setelah event database diterima dari Supabase.
+        function ensureBanRealtimeSubscription() {
+            if (!currentUser?.id || banRealtimeUserId === currentUser.id) return;
+            if (banRealtimeChannel) {
+                supabaseClient.removeChannel(banRealtimeChannel).catch(() => {});
+                banRealtimeChannel = null;
+            }
+            banRealtimeUserId = currentUser.id;
+            banRealtimeChannel = supabaseClient
+                .channel('gmailku-user-ban-' + currentUser.id)
+                .on('postgres_changes', {
+                    event: '*', schema: 'public', table: 'user_bans',
+                    filter: 'user_id=eq.' + currentUser.id
+                }, (payload) => {
+                    const row = payload.new || {};
+                    if (row.active === true) {
+                        showBlockedScreen(row.reason || 'Tidak ada alasan yang dicantumkan.');
+                    } else if (row.active === false && document.getElementById('screen-blocked')?.style.display !== 'none') {
+                        const blocked = document.getElementById('screen-blocked');
+                        blocked?.classList.add('hidden');
+                        if (blocked) blocked.style.display = 'none';
+                        showAppContent();
+                        showGameModal('BLOKIR DIBUKA', 'Akun Anda sudah dibuka blokirnya oleh admin.', 'success');
+                    }
+                })
+                .subscribe((status) => {
+                    if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.warn('Realtime status banned tidak tersambung:', status);
+                    }
+                });
+        }
 
         // Kunci navigasi autentikasi: selama sesi aktif, tombol Back tidak dapat
         // membawa pengguna ke Login/Daftar. Keluar akun hanya melalui handleLogout().
@@ -1303,7 +1364,10 @@
         }
 
         function showAppContent() {
-            if (currentUser) armAuthenticatedViewLock();
+            if (currentUser) {
+                armAuthenticatedViewLock();
+                ensureBanRealtimeSubscription();
+            }
             document.getElementById('screen-login').classList.add('hidden');
             document.getElementById('screen-signup').classList.add('hidden');
             document.getElementById('screen-otp').classList.add('hidden');
@@ -1314,6 +1378,7 @@
         }
 
         async function handleSignUp() {
+            if (otpSendInProgress) return;
             // Tidak ada pembatasan protokol: pendaftaran boleh dari HTTPS, localhost,
             // 127.0.0.1, maupun file://. Data akun/profil tetap dikirim ke Supabase.
 
@@ -1357,7 +1422,7 @@
             if (!/^[^\s@]+@gmail\.com$/i.test(email)) return showGameModal('GMAIL TIDAK VALID', 'Masukkan alamat Gmail yang benar.', 'error');
 
             const button = document.querySelector('#screen-login button[onclick="handleLogin()"]');
-            if (button) { button.disabled = true; button.textContent = 'MENGAMBIL DATA SUPABASE...'; }
+            if (button) { button.disabled = true; button.textContent = 'MEMUAT...'; }
             try {
                 const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                 if (error) throw error;
@@ -1398,6 +1463,11 @@
 
         async function handleLogout() {
 
+            if (banRealtimeChannel) {
+                await supabaseClient.removeChannel(banRealtimeChannel).catch(() => {});
+                banRealtimeChannel = null;
+                banRealtimeUserId = null;
+            }
             await supabaseClient.auth.signOut();
             localStorage.removeItem('gmailku_session');
             currentUser = null;
